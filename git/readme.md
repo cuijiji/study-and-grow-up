@@ -370,6 +370,36 @@
 
 屌不屌？我就想问一句，**还有谁？**这里我们对这个命令说明一下，**git merge命令用于合并指定分支到当前分支**所以保证要合并到的是当前分支，也要注意你要合并的分支！**切记切记！**
 
+>没参数的情况下merge是**fast-forward**的，即Git将master分支的指针直接移到dev的最前方。换句话说，如果顺着一个分支走下去可以到达另一个分支的话，那么Git在合并两者时，只会简单移动指针，所以这种合并成为快进式
+
+以上的那种我们称之为直接合并！我们还可以试试这种合并：
+
+>将一条分支上的若干个提交条目压合成一个提交条目，提交到另一条分支的末梢。把dev分支上的所有提交压合成主分支上的一个提交，即压合提交：
+
+　	
+
+	$ git checkout master
+	$ git merge --squash dev
+
+
+>此时，dev上的所有提交已经合并到当前工作区并暂存，但还没有作为一个提交，可以像其他提交一样，把这个改动提交到版本库中：
+
+　　
+	$ git commit –m “something from dev”
+
+拣选另一条分支上的某个提交条目的改动带到当前分支上。
+每一次提交都会产生一个全局唯一的提交名称，利用这个名称就可以进行拣选提交。
+比如在dev上的某个提交叫：321d76f***，我们现在把它合并到master
+
+	$ git checkout master
+	$ git cherry-pick 321d76f
+>要拣选多个提交，可以给git cherry-pick命令传递-n选项，比如：
+
+　　 
+	$ git cherry-pick –n 321d76f
+
+>这样在拣选了这个改动之后，进行暂存而不立即提交，接着可以进行下一个拣选操作，一旦拣选完需要的各个提交，就可以一并提交。
+
 ###删除分支
 像我这么正直的人，爱做的就是卸磨杀驴！用完了怎么删除？试试这个：
 
@@ -381,4 +411,67 @@
 
 ### 六：解决冲突
 
-####为什么拿出这个重点说下，因为版本控制器，最蛋疼的问题就是冲突！所以我来告诉大家怎么去解决，其实很简单，把大象装冰箱，分以下几步：
+####为什么拿出这个重点说下，因为版本控制器，最蛋疼的问题就是冲突！所以我来告诉大家怎么去解决
+
+首先我们想要解决冲突，就制造个冲突出来。很简单，还记得我们的分支吗？对了，就是这个！我就不在这里重复了，直接来命令
+
+	  $ git checkout -b dev
+	  $  git checkout dev
+	  $  vim README.md 
+	  $  git add README.md 
+	  $  git commit -m 'test test'
+	  $  git branch
+	  $  git branch master
+	  $  git checkout master
+	  $  vim README.md 
+	  $  git add README.md 
+	  $  git commit -m 'test master'
+	  $  git merge dev
+
+如果你看到的是这样的提示
+
+		Auto-merging README.md
+		CONFLICT (content): Merge conflict in README.md
+		Automatic merge failed; fix conflicts and then commit the result.
+
+那恭喜你，你冲突了！怎么办？解决！你可以用之前我们用过的命令看一下状态：
+
+		$ git status
+
+你也可以看到哪个文件冲突了！那么我们现在打开刚刚冲突的文件来看一看！
+
+		<<<<<<< HEAD
+		## 666
+		=======
+		## 777
+		>>>>>>> dev
+>解释一下：<<<<<<<标记冲突开始，后面跟的是当前分支中的内容。
+
+　　HEAD指向当前分支末梢的提交。
+
+　　=======之后，>>>>>>>之前是要merge过来的另一条分支上的代码。
+
+　　>>>>>>>之后的dev是该分支的名字。
+
+**对于简单的合并，手工编辑，然后去掉这些标记，最后像往常的提交一样先add再commit即可。我们可以通过下面这个命令来具体看一下**
+
+	$ git log --graph --pretty=oneline --abbrev-commit
+
+你会看见类似这样的提示：
+
+	*   10fcd7a modify README.md
+	|\  
+	| * f9b6554 test test
+	* | 7d60f76 test master
+	|/  
+
+有没有很好懂，但是那个git log 后面跟的一长串 都不记不住。怎么办？下面我来告诉你！怎么把命令简化！
+
+	$ git config --global alias.lg "log --graph --pretty=oneline --abbrev-commit"
+
+接下来你在运行一下 
+
+	$ git lg 
+
+看到了什么？神奇吧！不解释！按照这个写法，你自己去定制几个试试吧！
+
